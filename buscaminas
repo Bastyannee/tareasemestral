@@ -1,0 +1,97 @@
+import random
+
+def leer_entero(prompt, min_val, max_val):
+    #lee un entero en [min_val, max_val], vuelve a pedir si está fuera de rango.
+    while True:
+        try:
+            val = int(input(prompt))
+            if val < min_val or val > max_val:
+                print(f"Error: debe estar entre {min_val} y {max_val}.")
+            else:
+                return val
+        except ValueError:
+            print("Error: ingrese un número entero.")
+
+def inicializar_tableros(n, m):
+    interno = [[0 for _ in range(m)] for _ in range(n)]
+    visible = [['#' for _ in range(m)] for _ in range(n)]
+    return interno, visible
+
+def colocar_bombas(interno, b):
+    n, m = len(interno), len(interno[0])
+    lugares = [(i, j) for i in range(n) for j in range(m)]
+    bombas = random.sample(lugares, b)
+    for i, j in bombas:
+        interno[i][j] = -1
+    return bombas
+
+def calcular_adyacentes(interno):
+    n, m = len(interno), len(interno[0])
+    for i in range(n):
+        for j in range(m):
+            if interno[i][j] == -1:
+                continue
+            contador = 0
+            for di in (-1, 0, 1):
+                for dj in (-1, 0, 1):
+                    ni, nj = i+di, j+dj
+                    if 0 <= ni < n and 0 <= nj < m and interno[ni][nj] == -1:
+                        contador += 1
+            interno[i][j] = contador
+
+def mostrar_tablero(tablero):
+    for fila in tablero:
+        print(''.join(str(c) for c in fila))
+
+def revelar_todas_las_bombas(visible, interno):
+    n, m = len(interno), len(interno[0])
+    for i in range(n):
+        for j in range(m):
+            if interno[i][j] == -1:
+                visible[i][j] = '*'
+
+def jugar_buscamminas():
+    # Lectura y validación de dimensiones
+    n = leer_entero("Filas [3-15]: ", 3, 15)
+    m = leer_entero("Columnas [3-15]: ", 3, 15)
+    max_b = (n * m) // 4
+    b = leer_entero(f"Bombas [1-{max_b}]: ", 1, max_b)
+
+    interno, visible = inicializar_tableros(n, m)
+    bombas = colocar_bombas(interno, b)
+    calcular_adyacentes(interno)
+
+    print("\nTablero inicial:")
+    mostrar_tablero(visible)
+
+    reveladas = 0
+    total_seguras = n * m - b
+
+    while True:
+        # Leer coordenadas (1-based) y validar
+        fila = leer_entero(f"Ingrese fila [1-{n}]: ", 1, n) - 1
+        col  = leer_entero(f"Ingrese columna [1-{m}]: ", 1, m) - 1
+
+        if visible[fila][col] != '#':
+            print("Ya ha descubierto esa casilla, elija otra.")
+            continue
+
+        if interno[fila][col] == -1:
+            # Pierde: revela bombas y termina
+            revelar_todas_las_bombas(visible, interno)
+            mostrar_tablero(visible)
+            print("Has perdido")
+            break
+        else:
+            # Revela número o 0
+            visible[fila][col] = str(interno[fila][col])
+            reveladas += 1
+            mostrar_tablero(visible)
+
+            # Verifica victoria
+            if reveladas == total_seguras:
+                print("Gana el jugador")
+                break
+
+if __name__ == "__main__":
+    jugar_buscamminas()
